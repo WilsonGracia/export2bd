@@ -1,0 +1,12 @@
+*.class
+
+
+# Maven
+target/
+
+# VS Code
+.vscode/settings.json
+.vscode/tasks.json
+
+# GitHub gen
+.github/java-upgrade/
