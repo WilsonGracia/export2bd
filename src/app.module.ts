@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeOrmConfig } from './database/typeorm.config';
 import { DatabaseModule } from './database/database.module';
+import { ExportModule } from './export/export.module';
 
 @Module({
   imports: [
@@ -11,6 +12,8 @@ import { DatabaseModule } from './database/database.module';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => typeOrmConfig(config),
     }),
-  DatabaseModule],
+    DatabaseModule,
+    ExportModule,
+  ],
 })
 export class AppModule {}
