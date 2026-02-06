@@ -9,7 +9,7 @@ import {
 
 @Entity('controls')
 export class Control {
-  @PrimaryColumn({ type: 'varchar', length: 30 })
+  @PrimaryColumn({ type: 'varchar', length: 30, name: 'id_number' })
   id_number: string;
 
   @Column({ type: 'text' })
