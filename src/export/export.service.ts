@@ -7,12 +7,15 @@ import { ControlMapper } from './mappers/control.mapper';
 import { fileRepository } from './repository/fileRepository';
 import { ImportFailureMapper } from './mappers/importFailure.mapper';
 import { ImportFailureDto } from './dto/outputs/ImportFailureDto';
+import { DatabaseCredentialsDto } from './dto/inputs/DatabaseCredentialsDto';
+import { DynamicDatabaseService } from 'src/dynamic-database/dynamic-database.service';
 
 @Injectable()
 export class ExportService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly repo: fileRepository,
+    private readonly dynamicDbService: DynamicDatabaseService,
   ) {}
 
   async createControl(dto: CreateControlDto): Promise<ControlResponseDto> {
@@ -80,5 +83,36 @@ export class ExportService {
       failed: failures.length,
       failures,
     };
+  }
+
+  async createControlWithCredentials(
+    dto: CreateControlDto,
+    credentials: DatabaseCredentialsDto,
+  ): Promise<ControlResponseDto> {
+    const dynamicDataSource =
+      await this.dynamicDbService.getDataSource(credentials);
+
+    return dynamicDataSource.manager.transaction(
+      async (transactionalEntityManager: EntityManager) => {
+        const exist = await transactionalEntityManager.findOne(Control, {
+          where: { id_number: dto.id_number },
+        });
+
+        if (exist) {
+          throw new ConflictException(
+            `This control: ${dto.id_number} already exists`,
+          );
+        }
+
+        const controlEntity = ControlMapper.toEntity(dto);
+
+        const saved = await transactionalEntityManager.save(
+          Control,
+          controlEntity,
+        );
+
+        return ControlMapper.toResponseDto(saved);
+      },
+    );
   }
 }

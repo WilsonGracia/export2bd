@@ -4,6 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeOrmConfig } from './database/typeorm.config';
 import { DatabaseModule } from './database/database.module';
 import { ExportModule } from './export/export.module';
+import { DynamicDatabaseModule } from './dynamic-database/dynamic-database.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -14,6 +16,8 @@ import { ExportModule } from './export/export.module';
     }),
     DatabaseModule,
     ExportModule,
+    DynamicDatabaseModule,
+    AuthModule,
   ],
 })
 export class AppModule {}
