@@ -1,82 +1,116 @@
 # 📘 Export2BD
 
-**Export2BD** es una herramienta de escritorio que permite exportar datos desde archivos Excel (.xlsx) hacia bases de datos PostgreSQL, sin necesidad de conocimientos técnicos. Solo ingresa tus credenciales y sube tu archivo.
+**Export2BD** is a desktop tool that allows you to export data from Excel files (.xlsx) to PostgreSQL databases, without requiring any technical knowledge. Just enter your credentials and upload your file.
 
 ---
 
-## Navegación
+## Screenshots
 
-- [Inicio Rápido](#inicio-rápido)
+<table>
+  <tr>
+    <td align="center">
+      <img src="https://github.com/WilsonGracia/export2bd/blob/main/settingsview.png?raw=true" alt="Settings" width="350"/>
+      <br/><sub><b>Configure Credentials</b></sub>
+      <br/><sub>Enter your PostgreSQL database connection details (host, port, username, password, and database name). The connection is validated automatically upon saving.</sub>
+    </td>
+    <td align="center">
+      <img src="https://github.com/WilsonGracia/export2bd/blob/main/exportview.png?raw=true" alt="Export" width="350"/>
+      <br/><sub><b>Export Excel</b></sub>
+      <br/><sub>Select your <code>.xlsx</code> file and export it directly to the <code>controls</code> table in your database. Each row in the Excel file is inserted as a new record.</sub>
+    </td>
+  </tr>
+</table>
+
+---
+
+## Navigation
+
+- [Quick Start](#quick-start)
 - [API Reference](#api-reference)
-- [Arquitectura](#arquitectura)
-- [Autenticación JWT](#autenticación-jwt)
-- [Empaquetado Windows](#empaquetado-windows)
-- [Configurar Credenciales](#configurar-credenciales)
-- [Subir Excel](#subir-excel)
+- [Architecture](#architecture)
+- [JWT Authentication](#jwt-authentication)
+- [Windows Packaging](#windows-packaging)
+- [Configure Credentials](#configure-credentials)
+- [Upload Excel](#upload-excel)
 - [Launcher](#launcher)
-- [Seguridad](#seguridad)
-- [Errores Comunes](#errores-comunes)
-- [Conexión Dinámica](#conexión-dinámica)
+- [Security](#security)
+- [Common Errors](#common-errors)
+- [Dynamic Connection](#dynamic-connection)
+- [Roadmap](#roadmap)
 
 ---
 
-## Inicio Rápido
+## Quick Start
 
-1. Descarga la carpeta `Export2BD_Final`
-2. Ejecuta `launcher.bat`
-3. Se abrirá el backend NestJS y luego el frontend JavaFX automáticamente
-4. Ve a **Settings** e ingresa las credenciales de tu base de datos PostgreSQL
-5. Ve a **Export** y sube tu archivo `.xlsx`
+1. Download the `Export2BD_Final` folder
+2. Run `launcher.bat`
+3. The NestJS backend and then the JavaFX frontend will open automatically
+4. Go to **Settings** and enter your PostgreSQL database credentials
+5. Go to **Export** and upload your `.xlsx` file
 
-> ✅ No necesitas tener Java ni Node.js instalado — todo viene empaquetado.
+> ✅ You don't need Java or Node.js installed — everything comes pre-packaged.
+
+### Prerequisite: database structure
+
+> ⚠️ In this version, the application only works with a table named `controls`. Make sure your database has the following structure before using the app:
+```sql
+CREATE TABLE IF NOT EXISTS public.controls
+(
+    id_number   character varying(30)  NOT NULL,
+    name        text,
+    description text,
+    type        character varying(50),
+    created_at  timestamp without time zone DEFAULT now(),
+    updated_at  timestamp without time zone,
+    deleted_at  timestamp without time zone,
+    CONSTRAINT controle_pk PRIMARY KEY (id_number)
+);
+```
 
 ---
 
 ## API Reference
 
-El backend expone los siguientes endpoints en `http://localhost:3000`:
+The backend exposes the following endpoints at `http://localhost:3000`:
 
 ### Auth
 
-| Método | Endpoint | Descripción |
+| Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/auth/login` | Valida credenciales de BD y devuelve un JWT |
-| POST | `/auth/refresh` | Renueva el token JWT |
-| POST | `/auth/validate` | Valida un token existente |
+| POST | `/auth/login` | Validates DB credentials and returns a JWT |
+| POST | `/auth/refresh` | Renews the JWT token |
+| POST | `/auth/validate` | Validates an existing token |
 
 ### Export
 
-| Método | Endpoint | Descripción |
+| Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/export/upload-with-credentials` | Sube un `.xlsx` e inserta los registros en la BD |
-| POST | `/export/control-with-credentials` | Inserta un registro individual |
+| POST | `/export/upload-with-credentials` | Uploads a `.xlsx` file and inserts records into the DB |
+| POST | `/export/control-with-credentials` | Inserts a single record |
 
-Todos los endpoints de export requieren el header:
-
+All export endpoints require the following header:
 ```
 Authorization: Bearer <token>
 ```
 
-### Body para /auth/login
-
+### Body for /auth/login
 ```json
 {
   "host": "localhost",
   "port": 5432,
   "username": "postgres",
-  "password": "tupassword",
-  "database": "tubasededatos",
+  "password": "yourpassword",
+  "database": "yourdatabase",
   "schema": "public"
 }
 ```
 
 ---
 
-## Arquitectura
-
+## Architecture
 ```
 ┌─────────────────────┐    HTTP (localhost:3000)              ┌──────────────────────┐
-│   Frontend JavaFX   │ ───────────────────────────────────►  │  Backend NestJS      │
+│   JavaFX Frontend   │ ───────────────────────────────────►  │  NestJS Backend      │
 │                     │                                       │                      │
 │  - LoginView        │ POST /auth/login                      │  - AuthModule        │
 │  - SettingsView     │ POST /export/upload-with-credentials  │  - ExportModule      │
@@ -85,120 +119,142 @@ Authorization: Bearer <token>
                                                                          │
                                                                          ▼
                                                               ┌────────────────────────┐
-                                                              │  PostgreSQL (externo)  │
-                                                              │  Credenciales del      │
-                                                              │  usuario               │
+                                                              │  PostgreSQL (external) │
+                                                              │  User credentials      │
                                                               └────────────────────────┘
 ```
 
-El frontend JavaFX hace llamadas HTTP al backend NestJS que corre localmente. El backend usa las credenciales del usuario para conectarse dinámicamente a cualquier PostgreSQL externo.
+The JavaFX frontend makes HTTP calls to the NestJS backend running locally. The backend uses the user's credentials to dynamically connect to any external PostgreSQL instance.
 
 ---
 
-## Autenticación JWT
+## JWT Authentication
 
-1. El usuario ingresa sus credenciales de BD en el frontend
-2. El frontend las envía a `/auth/login`
-3. El backend valida la conexión a PostgreSQL con esas credenciales
-4. Si es válida, genera un JWT que contiene las credenciales encriptadas
-5. El frontend guarda el token y lo usa en cada petición posterior
-6. El token expira en **1 hora** y se puede renovar con `/auth/refresh`
+1. The user enters their DB credentials in the frontend
+2. The frontend sends them to `/auth/login`
+3. The backend validates the PostgreSQL connection using those credentials
+4. If valid, it generates a JWT containing the encrypted credentials
+5. The frontend stores the token and uses it in every subsequent request
+6. The token expires in **1 hour** and can be renewed with `/auth/refresh`
 
 ---
 
-## Empaquetado Windows
+## Windows Packaging
 
-El proyecto se distribuye como una carpeta portable:
-
+The project is distributed as a portable folder:
 ```
 Export2BD_Final/
-├── launcher.bat            ← Ejecutar esto
-├── export2bd-backend.exe   ← Backend NestJS (pkg + Node.js embebido)
-└── Export2BD/              ← Frontend JavaFX (jpackage + Liberica JDK 21)
+├── launcher.bat            ← Run this
+├── export2bd-backend.exe   ← NestJS backend (pkg + embedded Node.js)
+└── Export2BD/              ← JavaFX frontend (jpackage + Liberica JDK 21)
     ├── Export2BD.exe
     ├── app/
     └── runtime/
 ```
 
-- El backend se empaquetó con **pkg** (Node.js 18 embebido)
-- El frontend se empaquetó con **jpackage** usando **Liberica Full JDK 21** (Java + JavaFX embebido)
+- The backend was packaged with **pkg** (embedded Node.js 18)
+- The frontend was packaged with **jpackage** using **Liberica Full JDK 21** (embedded Java + JavaFX)
 
 ---
 
-## Configurar Credenciales
+## Configure Credentials
 
-1. Abre la aplicación con `launcher.bat`
-2. Ve a la sección **Settings**
-3. Ingresa los datos de tu base de datos PostgreSQL:
+1. Open the application with `launcher.bat`
+2. Go to the **Settings** section
+3. Enter your PostgreSQL database details:
 
-| Campo | Ejemplo | Descripción |
+| Field | Example | Description |
 |-------|---------|-------------|
-| Host | `localhost` | Dirección del servidor PostgreSQL |
-| Puerto | `5432` | Puerto por defecto de PostgreSQL |
-| Usuario | `postgres` | Nombre de usuario |
-| Contraseña | `••••••` | Contraseña del usuario |
-| Base de datos | `mibasededatos` | Nombre de la BD a usar |
+| Host | `localhost` | PostgreSQL server address |
+| Port | `5432` | Default PostgreSQL port |
+| Username | `postgres` | Database username |
+| Password | `••••••` | User password |
+| Database | `mydatabase` | Name of the database to use |
 
-Haz clic en **Guardar** — la conexión se validará automáticamente.
+Click **Save** — the connection will be validated automatically.
 
 ---
 
-## Subir Excel
+## Upload Excel
 
-El archivo `.xlsx` debe tener exactamente estas columnas en la primera fila:
+The `.xlsx` file must have exactly these columns in the first row:
 
 | id_number | name | type | description |
 |-----------|------|------|-------------|
-| 001 | Control A | preventivo | Descripción del control |
+| 001 | Control A | preventive | Control description |
 
-- `id_number`: identificador único (máx. 30 caracteres)
-- `name`: nombre del registro
-- `type`: tipo (máx. 50 caracteres)
-- `description`: descripción del registro
+- `id_number`: unique identifier (max 30 characters)
+- `name`: record name
+- `type`: type (max 50 characters)
+- `description`: record description
 
-> ⚠️ Si el archivo tiene columnas extra o faltantes, la importación será rechazada.
+> ⚠️ If the file has extra or missing columns, the import will be rejected.
 
 ---
 
 ## Launcher
 
-El `launcher.bat` realiza lo siguiente:
+The `launcher.bat` does the following:
 
-1. Inicia `export2bd-backend.exe` en segundo plano
-2. Espera a que el puerto `3000` esté activo
-3. Abre `Export2BD.exe`
-4. Cuando se cierra el frontend, mata el proceso del backend automáticamente
-
----
-
-## Seguridad
-
-- Las credenciales de BD **nunca se almacenan en texto plano**
-- Viajan encriptadas dentro de un **JWT firmado con HS256**
-- El token expira en 1 hora
-- Cada conexión a PostgreSQL se crea dinámicamente y se cierra tras 30 minutos de inactividad
-- El backend solo acepta conexiones desde `localhost`
+1. Starts `export2bd-backend.exe` in the background
+2. Waits for port `3000` to become active
+3. Opens `Export2BD.exe`
+4. When the frontend is closed, it automatically kills the backend process
 
 ---
 
-## Errores Comunes
+## Security
 
-| Error | Causa | Solución |
+- DB credentials are **never stored in plain text**
+- They travel encrypted inside a **JWT signed with HS256**
+- The token expires in 1 hour
+- Each PostgreSQL connection is created dynamically and closed after 30 minutes of inactivity
+- The backend only accepts connections from `localhost`
+
+---
+
+## Common Errors
+
+| Error | Cause | Solution |
 |-------|-------|----------|
-| `Server connection error` | El backend no está corriendo | Usar `launcher.bat` en lugar de abrir el .exe directamente |
-| `Invalid database credentials` | Credenciales incorrectas | Verificar host, puerto, usuario y contraseña |
-| `Missing columns` | El Excel no tiene el formato correcto | Usar columnas: `id_number, name, type, description` |
-| `Already exists` | El `id_number` ya existe en la BD | El registro ya fue importado previamente |
-| `Failed to launch JVM` | Runtime de Java incorrecto | Usar la versión empaquetada con Liberica Full JDK |
+| `Server connection error` | The backend is not running | Use `launcher.bat` instead of opening the .exe directly |
+| `Invalid database credentials` | Incorrect credentials | Verify host, port, username, and password |
+| `Missing columns` | The Excel file doesn't have the correct format | Use columns: `id_number, name, type, description` |
+| `Already exists` | The `id_number` already exists in the DB | The record was previously imported |
+| `Failed to launch JVM` | Incorrect Java runtime | Use the version packaged with Liberica Full JDK |
 
 ---
 
-## Conexión Dinámica
+## Dynamic Connection
 
-El backend no requiere una configuración fija de base de datos:
+The backend does not require a fixed database configuration:
 
-- Cada usuario provee sus propias credenciales desde el frontend
-- El backend crea una conexión PostgreSQL dinámica por usuario
-- Las conexiones se cachean por **30 minutos** para mejor rendimiento
-- Se soportan hasta **50 conexiones simultáneas**
-- Al cerrar la app, todas las conexiones se cierran automáticamente
+- Each user provides their own credentials from the frontend
+- The backend creates a dynamic PostgreSQL connection per user
+- Connections are cached for **30 minutes** for better performance
+- Up to **50 simultaneous connections** are supported
+- When the app is closed, all connections are closed automatically
+
+---
+
+## Roadmap
+
+This version is functional but does not represent the final product. The following improvements are planned for future versions:
+
+### 🧪 Testing
+- Implement unit and integration tests in the backend with **NestJS + Jest**
+- Implement frontend tests with **TestFX** for JavaFX
+
+### 🗂️ Table selection
+- Currently the app only supports the `controls` table
+- Allow the user to select the target table from the frontend at import time
+
+### 📁 More file formats
+- Support for `.csv`
+- Support for `.xls` (legacy Excel format)
+- Support for other tabular formats
+
+### 🖨️ Audit printing
+- Generate printable reports with the result of each import
+- Include date, user, records processed, successful and failed
+- Useful for audit and traceability purposes
