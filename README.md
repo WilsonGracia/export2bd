@@ -1,6 +1,6 @@
 # 📘 Export2BD
 
-**Export2BD** is a desktop tool that allows you to export data from Excel files (.xlsx) to PostgreSQL databases, without requiring any technical knowledge. Just enter your credentials and upload your file.
+**Export2BD** is a desktop tool that allows you to export data from Excel files (.xlsx) to PostgreSQL databases, without requiring any technical knowledge. Designed initially for managing **ISO 27001 security controls**, it lets you import and maintain your control catalog directly from a spreadsheet. Just enter your credentials and upload your file.
 
 ---
 
@@ -51,6 +51,7 @@
 > ✅ You don't need Java or Node.js installed — everything comes pre-packaged.
 
 ### Prerequisite: database structure
+> ℹ️ The `controls` table is designed to store **ISO 27001 security controls** the set of security measures defined by the standard that organizations implement to manage information security risks.
 
 > ⚠️ In this version, the application only works with a table named `controls`. Make sure your database has the following structure before using the app:
 ```sql
@@ -246,7 +247,7 @@ This version is functional but does not represent the final product. The followi
 - Implement frontend tests with **TestFX** for JavaFX
 
 ### 🗂️ Table selection
-- Currently the app only supports the `controls` table
+- Currently the app only supports the `controls` table, which in this case refers to **ISO 27001 security controls**
 - Allow the user to select the target table from the frontend at import time
 
 ### 📁 More file formats
