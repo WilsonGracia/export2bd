@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS public.controls
     created_at  timestamp without time zone DEFAULT now(),
     updated_at  timestamp without time zone,
     deleted_at  timestamp without time zone,
-    CONSTRAINT controle_pk PRIMARY KEY (id_number)
+    CONSTRAINT control_pk PRIMARY KEY (id_number)
 );
 ```
 
