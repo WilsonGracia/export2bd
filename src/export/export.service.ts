@@ -115,4 +115,61 @@ export class ExportService {
       },
     );
   }
+
+  async insertControlWithCredentials(
+    rows: object[],
+    credentials: DatabaseCredentialsDto,
+  ): Promise<{
+    processed: number;
+    succeeded: number;
+    failed: number;
+    failures: ImportFailureDto[];
+  }> {
+    const failures: ImportFailureDto[] = [];
+    let succeeded = 0;
+
+    const dynamicDataSource =
+      await this.dynamicDbService.getDataSource(credentials);
+
+    await dynamicDataSource.transaction(async (manager: EntityManager) => {
+      for (let i = 0; i < rows.length; i++) {
+        const rowNumber = i + 1;
+        const row = rows[i] as Record<string, any>;
+
+        try {
+          const values = Object.values(row);
+
+          const dto: CreateControlDto = {
+            id_number: String(values[0]).trim(),
+            name: String(values[1]).trim(),
+            type: String(values[2]).trim(),
+            description: String(values[3]).trim(),
+          };
+
+          const exist = await manager.findOne(Control, {
+            where: { id_number: dto.id_number },
+          });
+
+          if (exist) {
+            throw new ConflictException(
+              `Control '${dto.id_number}' already exists`,
+            );
+          }
+
+          const control = ControlMapper.toEntity(dto);
+          await manager.save(Control, control);
+          succeeded++;
+        } catch (error) {
+          failures.push(ImportFailureMapper.toDto(rowNumber, row, error));
+        }
+      }
+    });
+
+    return {
+      processed: rows.length,
+      succeeded,
+      failed: failures.length,
+      failures,
+    };
+  }
 }

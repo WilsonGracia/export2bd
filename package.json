@@ -9,13 +9,12 @@
   "pkg": {
     "scripts": "dist/**/*.js",
     "assets": [
-      "node_modules/@nestjs/**/*",
-      "node_modules/rxjs/**/*"
+      "node_modules/**/*"
     ],
     "targets": [
       "node18-win-x64"
     ],
-    "outputPath": "."
+    "outputPath": "release"
   },
   "scripts": {
     "build": "nest build",

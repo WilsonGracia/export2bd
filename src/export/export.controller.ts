@@ -68,4 +68,24 @@ export class ExportController {
   ): Promise<ControlResponseDto> {
     return this.exportService.createControlWithCredentials(dto, credentials);
   }
+
+  @Post('upload-with-credentials')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadFileWithCredentials(
+    @UploadedFile() file: Express.Multer.File,
+    @DbCredentials() credentials: DatabaseCredentialsDto,
+  ) {
+    const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+
+    const error = validateControlHeaders(extractHeaders(worksheet));
+    if (error) throw new BadRequestException(error);
+
+    const rows = XLSX.utils.sheet_to_json<Record<string, any>>(worksheet);
+    return await this.exportService.insertControlWithCredentials(
+      rows,
+      credentials,
+    );
+  }
 }
