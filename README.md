@@ -6,7 +6,7 @@
 
 ## Navegación
 
-- [Inicio Rápido](#inicio-rapido)
+- [Inicio Rápido](#inicio-rápido)
 - [API Reference](#api-reference)
 - [Arquitectura](#arquitectura)
 - [Autenticación JWT](#autenticación-jwt)
